@@ -1271,7 +1271,11 @@ depend() {
 }
 
 start_pre() {
-    [ -f /etc/xboard-node/credentials.env ] && . /etc/xboard-node/credentials.env || true
+    if [ -f /etc/xboard-node/credentials.env ]; then
+        set -a
+        . /etc/xboard-node/credentials.env
+        set +a
+    fi
     touch "$output_log"
 }
 `

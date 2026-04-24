@@ -703,8 +703,12 @@ depend() {
 }
 
 start_pre() {
-    # Load credentials if present
-    [ -f /etc/xboard-node/credentials.env ] && . /etc/xboard-node/credentials.env || true
+    # Load credentials if present and explicitly export them
+    if [ -f /etc/xboard-node/credentials.env ]; then
+        set -a
+        . /etc/xboard-node/credentials.env
+        set +a
+    fi
     # Ensure log file exists
     touch "$output_log"
 }
