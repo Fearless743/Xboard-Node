@@ -22,7 +22,6 @@ CLI_PATH="/usr/local/bin/xbctl"
 INSTALLER_COPY_PATH="${INSTALL_ROOT}/install.sh"
 CLI_BINARY_SOURCE=""
 DEFAULT_HEALTH_PORT=65530
-DEFAULT_KERNEL="singbox"
 DEFAULT_MODE="node"
 DEFAULT_ACTION="install"
 DEFAULT_RELEASE_VERSION="latest"
@@ -37,7 +36,6 @@ TOKEN=""
 NODE_ID=""
 NODE_TYPE=""
 MACHINE_ID=""
-KERNEL_TYPE="${DEFAULT_KERNEL}"
 RELEASE_VERSION="${DEFAULT_RELEASE_VERSION}"
 HEALTH_PORT="${DEFAULT_HEALTH_PORT}"
 HEALTH_ENABLED=1
@@ -193,7 +191,6 @@ usage() {
 
   OPTIONAL:
     --node-type, -T     Explicit node type for node mode
-    --kernel, -k        singbox or xray (default: singbox)
     --version           Release version or latest (default: latest)
     --binary            Use a local xboard-node binary path instead of downloading
     --xbctl-binary      Use a local xbctl binary path instead of downloading
@@ -243,10 +240,6 @@ parse_args() {
                 ;;
             --machine-id)
                 MACHINE_ID="$2"
-                shift 2
-                ;;
-            --kernel|-k)
-                KERNEL_TYPE="$2"
                 shift 2
                 ;;
             --version)
@@ -299,12 +292,6 @@ parse_args() {
     if [ ${#positional[@]} -gt 0 ] && [ "$ACTION" = "install" ]; then
         ACTION="${positional[0]}"
     fi
-
-    case "$KERNEL_TYPE" in
-        singbox|SingBox|SINGBOX) KERNEL_TYPE="singbox" ;;
-        xray|Xray|XRAY) KERNEL_TYPE="xray" ;;
-        *) ;;
-    esac
 
     # Auto-detect mode from arguments when --mode is not specified.
     if [ -z "$MODE" ]; then
@@ -487,13 +474,6 @@ validate_install_request() {
     if [ "$HEALTH_PORT" -eq 0 ]; then
         HEALTH_ENABLED=0
     fi
-    case "$KERNEL_TYPE" in
-        singbox|xray) ;;
-        *)
-            log_error "Kernel must be singbox or xray"
-            exit 1
-            ;;
-    esac
     case "$MODE" in
         node)
             validate_positive_int "Node ID" "$NODE_ID"
@@ -611,7 +591,6 @@ render_config() {
         config init
         --mode "$MODE"
         --panel-url "$PANEL_URL"
-        --kernel "${KERNEL_TYPE:-singbox}"
         --health-port "${HEALTH_PORT:-0}"
         --token "$TOKEN"
         --version "$RELEASE_VERSION"
