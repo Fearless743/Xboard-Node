@@ -2,6 +2,7 @@ package xray
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"os"
@@ -338,7 +339,7 @@ func buildShadowsocks(base M, nc *model.NodeSpec, users []model.UserSpec) M {
 		}
 		base["settings"] = M{
 			"method":   nc.Cipher,
-			"password": nc.ServerKey,
+			"password": normalizeSS2022Key(nc.ServerKey, ss2022.size),
 			"clients":  clients,
 			"network":  "tcp,udp",
 		}
@@ -858,6 +859,37 @@ func extractECHServerKeys(tlsSettings map[string]interface{}) string {
 	}
 
 	return echPEMToBase64(pemData)
+}
+
+
+// normalizeSS2022Key ensures a SS2022 server/user key is valid base64 that
+// decodes to exactly keySize bytes. If the input is already valid base64
+// with the right decoded length, it is returned as-is. Otherwise the raw
+// bytes are base64-encoded.
+func normalizeSS2022Key(raw string, keySize int) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return raw
+	}
+
+	// Try decoding as base64.
+	decoded, err := base64.StdEncoding.DecodeString(raw)
+	if err == nil && len(decoded) == keySize {
+		return raw // already valid base64 with correct decoded length
+	}
+
+	// Hex-encoded key? (2*keySize hex chars)
+	if len(raw) == keySize*2 {
+		hexDecoded, hexErr := hex.DecodeString(raw)
+		if hexErr == nil && len(hexDecoded) == keySize {
+			return base64.StdEncoding.EncodeToString(hexDecoded)
+		}
+	}
+
+	// Raw bytes -> base64 encode, truncate or zero-pad to keySize.
+	buf := make([]byte, keySize)
+	copy(buf, raw)
+	return base64.StdEncoding.EncodeToString(buf)
 }
 
 // echPEMToBase64 parses an "ECH KEYS" PEM block and returns base64 of the raw bytes.
