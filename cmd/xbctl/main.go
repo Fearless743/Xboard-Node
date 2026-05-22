@@ -117,7 +117,6 @@ type fileNodeConfig struct {
 }
 
 type fileKernelConfig struct {
-	Type         string           `yaml:"type"`
 	ConfigDir    string           `yaml:"config_dir"`
 	LogLevel     string           `yaml:"log_level,omitempty"`
 	GeoDataDir   string           `yaml:"geo_data_dir,omitempty"`
@@ -231,8 +230,8 @@ func printUsage() {
   xbctl config health-port [--config PATH]
   xbctl service status|start|stop|restart|enable|disable|logs
   xbctl health
-  xbctl bind add-node --panel-url URL --token TOKEN --node-id ID [--node-type TYPE] [--kernel singbox|xray]
-  xbctl bind add-machine --panel-url URL --token TOKEN --machine-id ID [--kernel singbox|xray]
+  xbctl bind add-node --panel-url URL --token TOKEN --node-id ID [--node-type TYPE]
+  xbctl bind add-machine --panel-url URL --token TOKEN --machine-id ID
   xbctl bind remove <instance-id>
   xbctl bind remove-node --panel URL --node-id ID
   xbctl bind remove-machine --panel URL --machine-id ID
@@ -937,8 +936,8 @@ func writeRootConfig(path string, root *config.RootConfig) error {
 	if p.Log.Level != "" || p.Log.Output != "" {
 		out.Log = &fileLogConfig{Level: p.Log.Level, Output: p.Log.Output}
 	}
-	if p.Kernel.Type != "" || p.Kernel.LogLevel != "" {
-		out.Kernel = &fileKernelConfig{Type: p.Kernel.Type, LogLevel: p.Kernel.LogLevel}
+	if p.Kernel.LogLevel != "" {
+		out.Kernel = &fileKernelConfig{LogLevel: p.Kernel.LogLevel}
 	}
 	if p.Node.PushInterval != 0 || p.Node.PullInterval != 0 || p.Node.TrackInterval != 0 || p.Node.DeviceReportInterval != 0 {
 		out.Node = &fileNodeConfig{
@@ -968,7 +967,6 @@ func writeRootConfig(path string, root *config.RootConfig) error {
 				NodeType: inst.Panel.NodeType,
 			},
 			Kernel: fileKernelConfig{
-				Type:         inst.Kernel.Type,
 				ConfigDir:    inst.Kernel.ConfigDir,
 				LogLevel:     inst.Kernel.LogLevel,
 				GeoDataDir:   inst.Kernel.GeoDataDir,
@@ -1349,7 +1347,6 @@ func runConfigInit(args []string) error {
 		nodeID         int
 		nodeType       string
 		machineID      int
-		kernelType     string
 		healthPort     int
 		gomemlimit     string
 		gogc           int
@@ -1401,9 +1398,6 @@ func runConfigInit(args []string) error {
 				return fmt.Errorf("invalid --machine-id: %w", err)
 			}
 			machineID = v
-		case "--kernel":
-			i++
-			kernelType = args[i]
 		case "--health-port":
 			i++
 			v, err := strconv.Atoi(args[i])
@@ -1450,7 +1444,6 @@ func runConfigInit(args []string) error {
 	inst := config.Config{
 		Panel: config.PanelConfig{URL: panelURL},
 		Kernel: config.KernelConfig{
-			Type:     kernelType,
 			LogLevel: "warn",
 		},
 		Log:        config.LogConfig{Level: "info", Output: "stdout"},
@@ -1501,7 +1494,7 @@ func runConfigInit(args []string) error {
 	if configIn != "" {
 		if loaded, loadErr := loadWritableRootConfig(configIn); loadErr == nil {
 			root = loaded
-			hasExisting = len(root.Instances) > 0 || root.Config.Panel.URL != "" || root.Config.Kernel.Type != ""
+			hasExisting = len(root.Instances) > 0 || root.Config.Panel.URL != ""
 		}
 	}
 
