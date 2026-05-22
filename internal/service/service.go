@@ -139,9 +139,15 @@ func NewWithControlPlane(cfg *config.Config, cp controlplane.ControlPlane) *Serv
 func newService(cfg *config.Config, cp controlplane.ControlPlane) *Service {
 	certMgr := cert.NewManager(cfg.Cert)
 
-	// Default to xray; ensureKernelForProtocol switches to singbox if the
-	// node's protocol is not supported by xray (e.g. tuic, naive, anytls).
-	k := xray.New(cfg.Kernel)
+	// Create kernel based on configured type. Machine mode sets this per-node;
+	// ensureKernelForProtocol may still switch it later if the protocol
+	// requires a different kernel.
+	var k kernel.Kernel
+	if cfg.Kernel.Type == "singbox" {
+		k = singbox.New(cfg.Kernel)
+	} else {
+		k = xray.New(cfg.Kernel)
+	}
 
 	l := limiter.New()
 	st := limiter.NewSpeedTracker(l)
