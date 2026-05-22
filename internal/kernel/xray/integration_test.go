@@ -15,12 +15,31 @@ import (
 
 func freePort(t *testing.T) int {
 	t.Helper()
+	// Check both TCP and UDP availability — xray binds both for SOCKS5/HTTP inbounds.
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("freePort: %v", err)
 	}
 	port := l.Addr().(*net.TCPAddr).Port
 	l.Close()
+
+	u, err := net.ListenPacket("udp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		// UDP taken (previous test cleanup in progress) — retry with a new port.
+		l2, err2 := net.Listen("tcp", "127.0.0.1:0")
+		if err2 != nil {
+			t.Fatalf("freePort retry: %v", err2)
+		}
+		port = l2.Addr().(*net.TCPAddr).Port
+		l2.Close()
+		u2, err3 := net.ListenPacket("udp", fmt.Sprintf("127.0.0.1:%d", port))
+		if err3 != nil {
+			t.Fatalf("freePort: UDP still unavailable after retry: %v", err3)
+		}
+		u2.Close()
+		return port
+	}
+	u.Close()
 	return port
 }
 

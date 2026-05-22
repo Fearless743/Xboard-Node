@@ -102,16 +102,26 @@ func socks5ConnectAuth(t *testing.T, proxyAddr, targetHost string, targetPort in
 	return conn
 }
 
+// testNodeSpecWithLocalRoute creates a NodeSpec that allows localhost traffic
+// to pass through the default SSRF block rule, enabling e2e tests against
+// local echo servers.
+func testNodeSpecWithLocalRoute(nc *model.NodeSpec) *model.NodeSpec {
+	nc.CustomRoutes = []map[string]any{
+		{"type": "field", "ip": []string{"127.0.0.0/8"}, "outboundTag": "direct"},
+	}
+	return nc
+}
+
 func TestE2E_SOCKS5_ProxyDataFlow(t *testing.T) {
 	echoPort, echoStop := startEchoServer(t)
 	defer echoStop()
 
 	socksPort := freePort(t)
-	nc := &model.NodeSpec{
+	nc := testNodeSpecWithLocalRoute(&model.NodeSpec{
 		Protocol:   "socks",
 		ListenIP:   "127.0.0.1",
 		ServerPort: socksPort,
-	}
+	})
 
 	x := New(config.KernelConfig{Type: "xray", LogLevel: "warn"})
 	if err := x.Start(nc, integrationTestUsers, kernel.TLSCert{}); err != nil {
@@ -148,11 +158,11 @@ func TestE2E_SOCKS5_MultipleConnections(t *testing.T) {
 	defer echoStop()
 
 	socksPort := freePort(t)
-	nc := &model.NodeSpec{
+	nc := testNodeSpecWithLocalRoute(&model.NodeSpec{
 		Protocol:   "socks",
 		ListenIP:   "127.0.0.1",
 		ServerPort: socksPort,
-	}
+	})
 
 	x := New(config.KernelConfig{Type: "xray", LogLevel: "warn"})
 	if err := x.Start(nc, integrationTestUsers, kernel.TLSCert{}); err != nil {
@@ -203,11 +213,11 @@ func TestE2E_HTTP_ProxyDataFlow(t *testing.T) {
 	defer echoStop()
 
 	httpPort := freePort(t)
-	nc := &model.NodeSpec{
+	nc := testNodeSpecWithLocalRoute(&model.NodeSpec{
 		Protocol:   "http",
 		ListenIP:   "127.0.0.1",
 		ServerPort: httpPort,
-	}
+	})
 
 	x := New(config.KernelConfig{Type: "xray", LogLevel: "warn"})
 	if err := x.Start(nc, integrationTestUsers, kernel.TLSCert{}); err != nil {
