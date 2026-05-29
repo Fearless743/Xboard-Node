@@ -130,6 +130,7 @@ jobs:
         with:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'dev' }}
           make_latest: ${{ startsWith(github.ref, 'refs/tags/') }}
+          generate_release_notes: true
           files: |
             dist/xboard-node-linux-amd64
             dist/xboard-node-linux-arm64
