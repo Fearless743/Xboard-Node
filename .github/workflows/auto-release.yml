@@ -57,7 +57,7 @@ jobs:
           fi
 
           # Determine bump level from commit prefixes.
-          # Priority: breaking > feat > fix > chore/other (no auto-bump)
+          # Priority: breaking > feat > perf/fix > chore/other (no auto-bump)
           BUMP=""
           while IFS= read -r msg; do
             lower=$(echo "$msg" | tr '[:upper:]' '[:lower:]')
@@ -68,7 +68,7 @@ jobs:
             if echo "$lower" | grep -qE '^feat(\(.+\))?:'; then
               [ "$BUMP" != "major" ] && BUMP="minor"
             fi
-            if echo "$lower" | grep -qE '^fix(\(.+\))?:'; then
+            if echo "$lower" | grep -qE '^(fix|perf)(\(.+\))?:'; then
               [ -z "$BUMP" ] && BUMP="patch"
             fi
           done <<< "$COMMITS"
