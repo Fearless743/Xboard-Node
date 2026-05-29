@@ -833,12 +833,14 @@ func (s *Service) applyUserDelta(ctx context.Context, action string, deltaUsers 
 			return
 		}
 
+		// O(n+m) lookup: build index from lastUsers, then scan deltas.
+		oldByID := make(map[int]model.UserSpec, len(s.lastUsers))
+		for _, old := range s.lastUsers {
+			oldByID[old.ID] = old
+		}
 		for _, delta := range deltaUsers {
-			for _, old := range s.lastUsers {
-				if old.ID == delta.ID && old.UUID != delta.UUID {
-					s.kernel.RemoveUsers([]model.UserSpec{old})
-					break
-				}
+			if old, ok := oldByID[delta.ID]; ok && old.UUID != delta.UUID {
+				s.kernel.RemoveUsers([]model.UserSpec{old})
 			}
 		}
 
@@ -977,6 +979,11 @@ func (s *Service) trackAndEnforce(ctx context.Context) {
 	}
 
 	s.tracker.Process(traffic, aliveIPs, connCount)
+
+	// Release pooled resources back to the kernel (if supported).
+	if r, ok := s.kernel.(kernel.TrafficDataReleaser); ok {
+		r.ReleaseTrafficData(traffic, aliveIPs)
+	}
 
 	// Only log stats if there's actual traffic or connections
 	if connCount > 0 || len(traffic) > 0 {
@@ -1137,9 +1144,13 @@ func computeConfigHash(cfg *model.NodeSpec) string {
 // computeUserHash returns a deterministic hash of the user list for change detection.
 // Uses direct byte encoding instead of binary.Write to avoid reflection overhead.
 func computeUserHash(users []model.UserSpec) string {
-	sorted := make([]model.UserSpec, len(users))
-	copy(sorted, users)
-	sort.Slice(sorted, func(i, j int) bool { return sorted[i].ID < sorted[j].ID })
+	sorted := users
+	// Fast path: check if already sorted by ID to avoid copy+sort.
+	if !sort.SliceIsSorted(sorted, func(i, j int) bool { return sorted[i].ID < sorted[j].ID }) {
+		sorted = make([]model.UserSpec, len(users))
+		copy(sorted, users)
+		sort.Slice(sorted, func(i, j int) bool { return sorted[i].ID < sorted[j].ID })
+	}
 
 	h := sha256.New()
 	var buf [8]byte

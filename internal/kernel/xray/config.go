@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/cedar2025/xboard-node/internal/config"
@@ -16,6 +17,21 @@ import (
 
 // M is a shorthand for building JSON-like maps
 type M = map[string]interface{}
+
+// privateIPCidrs lists RFC 1918 and other private/reserved IPv4+IPv6 ranges.
+var privateIPCidrs = []string{
+	"10.0.0.0/8",
+	"100.64.0.0/10",
+	"127.0.0.0/8",
+	"169.254.0.0/16",
+	"172.16.0.0/12",
+	"192.0.0.0/24",
+	"192.168.0.0/16",
+	"198.18.0.0/15",
+	"fc00::/7",
+	"fe80::/10",
+	"::1/128",
+}
 
 func buildConfig(kcfg config.KernelConfig, nc *model.NodeSpec, users []model.UserSpec, tc kernel.TLSCert) M {
 	var outbounds []M
@@ -235,10 +251,29 @@ func buildInbound(nc *model.NodeSpec, users []model.UserSpec, tc kernel.TLSCert)
 	}
 }
 
+// userEmailCache caches "user@<id>" strings to avoid repeated allocations.
+// Index = userID. Grows on demand, never shrinks (user IDs are stable).
+var userEmailCache []string
+
 // userEmail returns the stats-tracking email for a user.
 // Format: "user@<id>" so we can parse back the user ID from stats counters.
+// Results are cached per userID to avoid per-build allocations.
 func userEmail(userID int) string {
-	return fmt.Sprintf("user@%d", userID)
+	if userID >= 0 && userID < len(userEmailCache) {
+		if s := userEmailCache[userID]; s != "" {
+			return s
+		}
+	}
+	s := "user@" + strconv.Itoa(userID)
+	if userID >= 0 {
+		if userID >= len(userEmailCache) {
+			newCache := make([]string, userID+1)
+			copy(newCache, userEmailCache)
+			userEmailCache = newCache
+		}
+		userEmailCache[userID] = s
+	}
+	return s
 }
 
 func buildVMess(base M, nc *model.NodeSpec, users []model.UserSpec, tc kernel.TLSCert) M {
@@ -663,20 +698,8 @@ func buildRouting(rules []model.RouteRule, customRouteRules []model.CustomRouteR
 	}
 
 	xrayRules = append(xrayRules, M{
-		"type": "field",
-		"ip": []string{
-			"10.0.0.0/8",
-			"100.64.0.0/10",
-			"127.0.0.0/8",
-			"169.254.0.0/16",
-			"172.16.0.0/12",
-			"192.0.0.0/24",
-			"192.168.0.0/16",
-			"198.18.0.0/15",
-			"fc00::/7",
-			"fe80::/10",
-			"::1/128",
-		},
+		"type":        "field",
+		"ip":           privateIPCidrs,
 		"outboundTag": "block",
 	})
 
