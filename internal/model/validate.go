@@ -70,7 +70,6 @@ var xraySupportedProtocols = map[string]bool{
 	"vless":       true,
 	"trojan":      true,
 	"shadowsocks": true,
-	"hysteria":    true,
 }
 
 // ResolveKernelForProtocol returns the kernel type that supports the given
