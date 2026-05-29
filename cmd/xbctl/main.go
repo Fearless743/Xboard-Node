@@ -30,9 +30,11 @@ const (
 	serviceName            = "xboard-node"
 	systemdServiceFilePath = "/etc/systemd/system/xboard-node.service"
 	openrcInitScript       = "/etc/init.d/xboard-node"
-	defaultInstallRoot     = "/etc/xboard-node"
-	downloadBase           = "https://github.com/cedar2025/xboard-node/releases"
+	defaultInstallRoot = "/etc/xboard-node"
 )
+
+// Set via ldflags at build time: -X main.downloadBase=...
+var downloadBase = "https://github.com/cedar2025/xboard-node/releases"
 
 // initSystem returns "systemd", "openrc", or "unknown".
 func initSystem() string {
@@ -1281,7 +1283,7 @@ start_pre() {
 	}
 	unit := fmt.Sprintf(`[Unit]
 Description=Xboard Node Backend
-Documentation=https://github.com/cedar2025/xboard-node
+Documentation=%s
 After=network-online.target
 Wants=network-online.target
 
@@ -1299,7 +1301,7 @@ StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
-`, defaultInstallRoot, defaultCredentialsPath, defaultBinaryPath, defaultConfigPath)
+`, strings.TrimSuffix(downloadBase, "/releases"), defaultInstallRoot, defaultCredentialsPath, defaultBinaryPath, defaultConfigPath)
 	return os.WriteFile(systemdServiceFilePath, []byte(unit), 0o644)
 }
 

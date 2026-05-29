@@ -49,7 +49,12 @@ jobs:
       - name: Build
         env:
           VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || github.sha }}
+          REPO_BASE: https://github.com/${{ github.repository }}/releases
         run: |
+          # Ensure REPO_BASE is lowercase (GitHub releases URLs are case-insensitive,
+          # but keep it consistent with GHCR image names).
+          REPO_BASE="${REPO_BASE,,}"
+          export REPO_BASE
           if [ "${{ matrix.goarch }}" = "amd64" ]; then
             make build-linux
           else
