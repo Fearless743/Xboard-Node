@@ -107,6 +107,10 @@ jobs:
         if: steps.bump.outputs.tagged == 'true'
         run: |
           TAG=${{ steps.bump.outputs.new_tag }}
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists — skipping."
+            exit 0
+          fi
           git tag "$TAG"
           git push origin "$TAG"
           echo "Pushed tag $TAG — CI will build & release automatically."
