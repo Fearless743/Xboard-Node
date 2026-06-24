@@ -120,6 +120,11 @@ func NodeSpecFromPanel(nc *panel.NodeConfig) *NodeSpec {
 		PaddingScheme:       string(nc.PaddingScheme),
 		Transport:           nc.Transport,
 		TrafficPattern:      nc.TrafficPattern,
+		SudokuConfig:        sudokuConfigFromPanel(nc.SudokuConfig),
+		TrustTunnelNetwork:              nc.TrustTunnelNetwork,
+		TrustTunnelCongestionController: nc.TrustTunnelCongestionController,
+		TrustTunnelCWND:                 nc.TrustTunnelCWND,
+		TrustTunnelBBRProfile:           nc.TrustTunnelBBRProfile,
 		Multiplex:           multiplex,
 		AcceptProxyProtocol: nc.AcceptProxyProtocol,
 	}
@@ -131,6 +136,26 @@ func NodeSpecFromPanelValidated(nc *panel.NodeConfig, kcfg config.KernelConfig) 
 		return nil, err
 	}
 	return spec, nil
+}
+
+func sudokuConfigFromPanel(sc *panel.SudokuConfig) *SudokuConfig {
+	if sc == nil {
+		return nil
+	}
+	return &SudokuConfig{
+		AEADMethod:         sc.AEADMethod,
+		PaddingMin:         sc.PaddingMin,
+		PaddingMax:         sc.PaddingMax,
+		TableType:          sc.TableType,
+		HandshakeTimeout:   sc.HandshakeTimeout,
+		EnablePureDownlink: sc.EnablePureDownlink,
+		CustomTable:        sc.CustomTable,
+		CustomTables:       cloneStringSlice(sc.CustomTables),
+		DisableHTTPMask:    sc.DisableHTTPMask,
+		HTTPMaskMode:       sc.HTTPMaskMode,
+		PathRoot:           sc.PathRoot,
+		Fallback:           sc.Fallback,
+	}
 }
 
 func UserSpecsFromPanel(users []panel.User) []UserSpec {
@@ -259,8 +284,33 @@ func (n *NodeSpec) ToPanel() *panel.NodeConfig {
 		PaddingScheme:       panel.StringOrArray(n.PaddingScheme),
 		Transport:           n.Transport,
 		TrafficPattern:      n.TrafficPattern,
+		SudokuConfig:        sudokuConfigToPanel(n.SudokuConfig),
+		TrustTunnelNetwork:              n.TrustTunnelNetwork,
+		TrustTunnelCongestionController: n.TrustTunnelCongestionController,
+		TrustTunnelCWND:                 n.TrustTunnelCWND,
+		TrustTunnelBBRProfile:           n.TrustTunnelBBRProfile,
 		Multiplex:           multiplex,
 		AcceptProxyProtocol: n.AcceptProxyProtocol,
+	}
+}
+
+func sudokuConfigToPanel(sc *SudokuConfig) *panel.SudokuConfig {
+	if sc == nil {
+		return nil
+	}
+	return &panel.SudokuConfig{
+		AEADMethod:         sc.AEADMethod,
+		PaddingMin:         sc.PaddingMin,
+		PaddingMax:         sc.PaddingMax,
+		TableType:          sc.TableType,
+		HandshakeTimeout:   sc.HandshakeTimeout,
+		EnablePureDownlink: sc.EnablePureDownlink,
+		CustomTable:        sc.CustomTable,
+		CustomTables:       cloneStringSlice(sc.CustomTables),
+		DisableHTTPMask:    sc.DisableHTTPMask,
+		HTTPMaskMode:       sc.HTTPMaskMode,
+		PathRoot:           sc.PathRoot,
+		Fallback:           sc.Fallback,
 	}
 }
 

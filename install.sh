@@ -512,6 +512,12 @@ select_binary_source() {
         echo "$BINARY_SOURCE"
         return
     fi
+    # Reuse already-installed binary if it validates successfully
+    if [ -x "$BINARY_PATH" ] && "$BINARY_PATH" -v >/dev/null 2>&1; then
+        log_step "Reusing existing binary: ${BINARY_PATH}"
+        echo "$BINARY_PATH"
+        return
+    fi
     if [ -f "./xboard-node" ]; then
         echo "./xboard-node"
         return
@@ -563,6 +569,9 @@ stage_xbctl() {
             exit 1
         fi
         local_src="$CLI_BINARY_SOURCE"
+    elif [ -x "$CLI_PATH" ] && "$CLI_PATH" version >/dev/null 2>&1; then
+        log_step "Reusing existing xbctl: ${CLI_PATH}"
+        local_src="$CLI_PATH"
     elif [ -f "./xbctl" ]; then
         local_src="./xbctl"
     elif [ -f "./xbctl-linux-${ARCH}" ]; then

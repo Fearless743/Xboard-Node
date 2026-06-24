@@ -21,6 +21,7 @@ import (
 	"github.com/cedar2025/xboard-node/internal/kernel"
 	"github.com/cedar2025/xboard-node/internal/kernel/singbox"
 	"github.com/cedar2025/xboard-node/internal/kernel/xray"
+	"github.com/cedar2025/xboard-node/internal/kernel/mihomo"
 	"github.com/cedar2025/xboard-node/internal/limiter"
 	"github.com/cedar2025/xboard-node/internal/model"
 	"github.com/cedar2025/xboard-node/internal/monitor"
@@ -143,9 +144,12 @@ func newService(cfg *config.Config, cp controlplane.ControlPlane) *Service {
 	// ensureKernelForProtocol may still switch it later if the protocol
 	// requires a different kernel.
 	var k kernel.Kernel
-	if cfg.Kernel.Type == "singbox" {
+	switch cfg.Kernel.Type {
+	case "singbox":
 		k = singbox.New(cfg.Kernel)
-	} else {
+	case "mihomo":
+		k = mihomo.New(cfg.Kernel)
+	default:
 		k = xray.New(cfg.Kernel)
 	}
 
@@ -186,6 +190,8 @@ func (s *Service) ensureKernelForProtocol(protocol string) {
 	switch resolved {
 	case "singbox":
 		s.kernel = singbox.New(s.cfg.Kernel)
+	case "mihomo":
+		s.kernel = mihomo.New(s.cfg.Kernel)
 	case "xray":
 		s.kernel = xray.New(s.cfg.Kernel)
 	}
@@ -1210,7 +1216,7 @@ func validateNodeRuntime(kcfgSupported []string, spec *model.NodeSpec, tls kerne
 func validateTLSRequirements(spec *model.NodeSpec, tls kernel.TLSCert, kernelType string) error {
 	needsCert := false
 	switch spec.Protocol {
-	case "hysteria", "hysteria2", "tuic", "anytls":
+	case "hysteria", "hysteria2", "tuic", "anytls", "trusttunnel":
 		needsCert = true
 	case "trojan":
 		if spec.TLS != 2 {
