@@ -514,7 +514,7 @@ select_binary_source() {
     fi
     # Reuse already-installed binary if it validates successfully
     if [ -x "$BINARY_PATH" ] && "$BINARY_PATH" -v >/dev/null 2>&1; then
-        log_step "Reusing existing binary: ${BINARY_PATH}"
+        log_step "Reusing existing binary: ${BINARY_PATH}" >&2
         echo "$BINARY_PATH"
         return
     fi
