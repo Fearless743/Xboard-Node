@@ -512,8 +512,9 @@ select_binary_source() {
         echo "$BINARY_SOURCE"
         return
     fi
-    # Reuse already-installed binary if it validates successfully
-    if [ -x "$BINARY_PATH" ] && "$BINARY_PATH" -v >/dev/null 2>&1; then
+    # Reuse already-installed binary if it validates successfully.
+    # Never do this during "upgrade" -- that would just reinstall the old version.
+    if [ "$ACTION" != "upgrade" ] && [ -x "$BINARY_PATH" ] && "$BINARY_PATH" -v >/dev/null 2>&1; then
         log_step "Reusing existing binary: ${BINARY_PATH}" >&2
         echo "$BINARY_PATH"
         return
@@ -569,7 +570,7 @@ stage_xbctl() {
             exit 1
         fi
         local_src="$CLI_BINARY_SOURCE"
-    elif [ -x "$CLI_PATH" ] && "$CLI_PATH" version >/dev/null 2>&1; then
+    elif [ "$ACTION" != "upgrade" ] && [ -x "$CLI_PATH" ] && "$CLI_PATH" version >/dev/null 2>&1; then
         log_step "Reusing existing xbctl: ${CLI_PATH}"
         local_src="$CLI_PATH"
     elif [ -f "./xbctl" ]; then
