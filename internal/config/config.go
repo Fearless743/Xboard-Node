@@ -106,6 +106,7 @@ type NodeConfig struct {
 	PullInterval         int `yaml:"pull_interval"`
 	TrackInterval        int `yaml:"track_interval"`         // sec, default 10
 	DeviceReportInterval int `yaml:"device_report_interval"` // sec, default 30
+	UserSyncInterval     int `yaml:"user_sync_interval"`     // sec, default 300
 }
 
 // WSConfig holds WebSocket client tuning options.
@@ -468,6 +469,9 @@ func (c *Config) inheritFrom(parent *Config) {
 	if c.Node.DeviceReportInterval == 0 {
 		c.Node.DeviceReportInterval = parent.Node.DeviceReportInterval
 	}
+	if c.Node.UserSyncInterval == 0 {
+		c.Node.UserSyncInterval = parent.Node.UserSyncInterval
+	}
 	// WS
 	if c.WS.StatusInterval == 0 {
 		c.WS.StatusInterval = parent.WS.StatusInterval
@@ -591,6 +595,9 @@ func (c *Config) setDefaultsFrom(baseDir string) {
 	}
 	if c.Node.DeviceReportInterval == 0 {
 		c.Node.DeviceReportInterval = 30
+	}
+	if c.Node.UserSyncInterval == 0 {
+		c.Node.UserSyncInterval = 300
 	}
 }
 
@@ -718,6 +725,9 @@ func (c *Config) validate() error {
 	}
 	if c.Node.PullInterval < 0 {
 		return fmt.Errorf("node.pull_interval must not be negative")
+	}
+	if c.Node.UserSyncInterval < 0 {
+		return fmt.Errorf("node.user_sync_interval must not be negative")
 	}
 	return nil
 }

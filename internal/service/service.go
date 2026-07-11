@@ -221,6 +221,11 @@ func (s *Service) Run(ctx context.Context) error {
 	pullTicker := time.NewTicker(pullInterval)
 	deviceReportTicker := time.NewTicker(time.Duration(s.cfg.Node.DeviceReportInterval) * time.Second)
 
+	// User sync ticker: periodically reconcile user list regardless of WS status.
+	// This provides a safety net for user updates that may not be pushed via WS.
+	userSyncInterval := time.Duration(s.cfg.Node.UserSyncInterval) * time.Second
+	userSyncTicker := time.NewTicker(userSyncInterval)
+
 	// WS discovery: when in REST-only mode, periodically re-handshake to check
 	// if WS has been enabled. When WS is disconnected for too long, re-check
 	// if it's still available.
@@ -229,6 +234,7 @@ func (s *Service) Run(ctx context.Context) error {
 	defer trackTicker.Stop()
 	defer reportTicker.Stop()
 	defer pullTicker.Stop()
+	defer userSyncTicker.Stop()
 	defer deviceReportTicker.Stop()
 	defer wsDiscoveryTicker.Stop()
 
@@ -260,6 +266,10 @@ func (s *Service) Run(ctx context.Context) error {
 
 		case result := <-s.pullResults:
 			s.applyPullResult(ctx, result)
+
+		case <-userSyncTicker.C:
+			nlog.Core().Debug("periodic user sync (fallback)")
+			s.pullViaAPIAsync(ctx)
 
 		case <-wsDiscoveryTicker.C:
 			s.wsDiscovery(ctx)

@@ -116,6 +116,7 @@ type fileNodeConfig struct {
 	PullInterval         int `yaml:"pull_interval,omitempty"`
 	TrackInterval        int `yaml:"track_interval,omitempty"`
 	DeviceReportInterval int `yaml:"device_report_interval,omitempty"`
+	UserSyncInterval     int `yaml:"user_sync_interval,omitempty"`
 }
 
 type fileKernelConfig struct {
@@ -941,12 +942,13 @@ func writeRootConfig(path string, root *config.RootConfig) error {
 	if p.Kernel.LogLevel != "" {
 		out.Kernel = &fileKernelConfig{LogLevel: p.Kernel.LogLevel}
 	}
-	if p.Node.PushInterval != 0 || p.Node.PullInterval != 0 || p.Node.TrackInterval != 0 || p.Node.DeviceReportInterval != 0 {
+	if p.Node.PushInterval != 0 || p.Node.PullInterval != 0 || p.Node.TrackInterval != 0 || p.Node.DeviceReportInterval != 0 || p.Node.UserSyncInterval != 0 {
 		out.Node = &fileNodeConfig{
 			PushInterval:         p.Node.PushInterval,
 			PullInterval:         p.Node.PullInterval,
 			TrackInterval:        p.Node.TrackInterval,
 			DeviceReportInterval: p.Node.DeviceReportInterval,
+			UserSyncInterval:     p.Node.UserSyncInterval,
 		}
 	}
 	if p.Runtime.GoMemLimit != "" || p.Runtime.GoGCPercent != 0 {
@@ -982,12 +984,13 @@ func writeRootConfig(path string, root *config.RootConfig) error {
 			},
 			HealthPort: inst.HealthPort,
 		}
-		if !inst.IsMachineMode() && (inst.Node.PushInterval != 0 || inst.Node.PullInterval != 0 || inst.Node.TrackInterval != 0 || inst.Node.DeviceReportInterval != 0) {
+		if !inst.IsMachineMode() && (inst.Node.PushInterval != 0 || inst.Node.PullInterval != 0 || inst.Node.TrackInterval != 0 || inst.Node.DeviceReportInterval != 0 || inst.Node.UserSyncInterval != 0) {
 			fi.Node = &fileNodeConfig{
 				PushInterval:         inst.Node.PushInterval,
 				PullInterval:         inst.Node.PullInterval,
 				TrackInterval:        inst.Node.TrackInterval,
 				DeviceReportInterval: inst.Node.DeviceReportInterval,
+				UserSyncInterval:     inst.Node.UserSyncInterval,
 			}
 		}
 		if inst.Runtime.GoMemLimit != "" || inst.Runtime.GoGCPercent != 0 {

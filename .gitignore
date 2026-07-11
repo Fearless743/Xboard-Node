@@ -1,5 +1,6 @@
 # Binaries
 /xboard-node
+/xbctl
 /xboard-node-linux-*
 *.exe
 

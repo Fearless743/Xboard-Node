@@ -24,3 +24,9 @@
 #       token: "machine-token-2"
 #     log:
 #       level: "debug"   # override for this instance only
+
+# ── User sync interval ──
+# node:
+#   user_sync_interval: 300    # 定期从面板同步用户列表的间隔（秒），默认 300（5分钟）
+#                               # 即使 WebSocket 连接正常，也会定期兜底拉取用户列表，
+#                               # 避免因 WS 推送遗漏导致新用户无法连接
